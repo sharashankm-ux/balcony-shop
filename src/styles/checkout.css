@@ -1,0 +1,131 @@
+body{
+  background:#f4f6f9;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.checkout-container{
+  max-width:1200px;
+  margin:40px auto;
+  padding:20px;
+}
+
+.checkout-title{
+  font-size:34px;
+  font-weight:700;
+  color:#1b5e20;
+  margin-bottom:25px;
+}
+
+.checkout-card{
+  background:#fff;
+  border-radius:16px;
+  padding:25px;
+  margin-bottom:25px;
+  box-shadow:0 8px 25px rgba(0,0,0,.08);
+}
+
+.checkout-card h2{
+  margin-bottom:20px;
+  color:#2e7d32;
+}
+
+.checkout-card label{
+  display:block;
+  margin:15px 0 8px;
+  font-weight:600;
+  color:#333;
+}
+
+.checkout-card input,
+.checkout-card textarea,
+.checkout-card select{
+  width:100%;
+  padding:14px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  font-size:16px;
+  outline:none;
+  transition:.3s;
+  box-sizing:border-box;
+}
+
+.checkout-card input:focus,
+.checkout-card textarea:focus,
+.checkout-card select:focus{
+  border-color:#2e7d32;
+  box-shadow:0 0 0 3px rgba(46,125,50,.15);
+}
+
+.checkout-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
+
+.summary-row{
+  display:flex;
+  justify-content:space-between;
+  margin:12px 0;
+  font-size:17px;
+}
+
+.total-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:28px;
+  font-weight:bold;
+  color:#2e7d32;
+}
+
+.place-order-btn{
+  width:100%;
+  padding:18px;
+  margin-top:30px;
+  border:none;
+  border-radius:12px;
+  background:#2e7d32;
+  color:#fff;
+  font-size:20px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.place-order-btn:hover{
+  background:#1b5e20;
+  transform:translateY(-2px);
+}
+
+.payment-card{
+  border:2px solid #e0e0e0;
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:15px;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.payment-card:hover{
+  border-color:#2e7d32;
+}
+
+.saved-address{
+  background:#f8fff8;
+  border-left:5px solid #2e7d32;
+}
+
+@media(max-width:768px){
+
+.checkout-grid{
+grid-template-columns:1fr;
+}
+
+.checkout-title{
+font-size:28px;
+}
+
+.total-row{
+font-size:22px;
+}
+
+}
