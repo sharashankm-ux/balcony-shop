@@ -5,6 +5,8 @@ import "../styles/checkout.css";
 
 import { CartContext } from "../context/CartContext";
 import { OrderContext } from "../context/OrderContext";
+import { ProductContext } from "../context/ProductContext";
+import { AuthContext } from "../context/AuthContext";
 
 import CheckoutForm from "../components/checkout/CheckoutForm";
 import PaymentMethods from "../components/checkout/PaymentMethods";
@@ -17,8 +19,10 @@ import SavedAddress from "../components/checkout/SavedAddress";
 function Checkout() {
   const navigate = useNavigate();
 
+  const { user } = useContext(AuthContext);
   const { cartItems, clearCart } = useContext(CartContext);
   const { placeOrder } = useContext(OrderContext);
+  const { reduceStock } = useContext(ProductContext);
 
   const [form, setForm] = useState(() => {
     const saved = localStorage.getItem("savedAddress");
@@ -69,7 +73,7 @@ function Checkout() {
     });
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (
       !form.name ||
       !form.mobile ||
@@ -88,16 +92,32 @@ function Checkout() {
       );
     }
 
-    placeOrder({
+    await placeOrder({
+      buyerId: user?.uid || "",
+      buyerEmail: user?.email || "",
+
       customer: form.name,
       mobile: form.mobile,
       address: form.address,
       city: form.city,
       pincode: form.pincode,
+
       payment,
       total: grandTotal,
-      items: cartItems,
+
+      items: cartItems.map((item) => ({
+        id: item.id,
+        productName: item.name,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+
+        sellerId: item.sellerId || "",
+        sellerEmail: item.sellerEmail || "",
+      })),
     });
+
+    await reduceStock(cartItems);
 
     clearCart();
 
@@ -152,7 +172,7 @@ function Checkout() {
         />
       )}
 
-      <CouponBox
+            <CouponBox
         subtotal={subtotal}
         setDiscount={setDiscount}
       />
@@ -178,3 +198,4 @@ function Checkout() {
 }
 
 export default Checkout;
+      

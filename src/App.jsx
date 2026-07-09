@@ -16,6 +16,7 @@ import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import OrderTracking from "./pages/OrderTracking";
 import MyOrders from "./pages/MyOrders";
+import Profile from "./pages/profile/Profile"; // ✅ Profile Import
 
 import BuyerDashboard from "./pages/BuyerDashboard";
 import SellerDashboard from "./pages/SellerDashboard";
@@ -40,6 +41,17 @@ function App() {
         <Route path="/orders" element={<Orders />} />
         <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/tracking" element={<OrderTracking />} />
+
+        {/* ✅ Protected Profile Route */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="/login" element={<Login />} />
 
         <Route

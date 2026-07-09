@@ -4,9 +4,13 @@ import { OrderContext } from "../context/OrderContext";
 function SalesChart() {
   const { orders } = useContext(OrderContext);
 
-  const data = orders
-    .slice(0, 6)
-    .reverse()
+  // Only Delivered Orders
+  const deliveredOrders = orders.filter(
+    (order) => order.status === "Delivered"
+  );
+
+  const data = deliveredOrders
+    .slice(-6)
     .map((order, index) => ({
       label: order.orderId || `#${index + 1}`,
       value: Number(order.total || 0),
@@ -18,13 +22,20 @@ function SalesChart() {
         style={{
           background: "#fff",
           marginTop: "30px",
-          padding: "20px",
+          padding: "25px",
           borderRadius: "12px",
           boxShadow: "0 5px 15px rgba(0,0,0,.1)",
         }}
       >
         <h2>📈 Sales Analytics</h2>
-        <p>No Sales Available</p>
+        <p
+          style={{
+            color: "#777",
+            marginTop: "20px",
+          }}
+        >
+          No Delivered Sales Available
+        </p>
       </div>
     );
   }
@@ -36,7 +47,7 @@ function SalesChart() {
       style={{
         background: "#fff",
         marginTop: "30px",
-        padding: "20px",
+        padding: "25px",
         borderRadius: "12px",
         boxShadow: "0 5px 15px rgba(0,0,0,.1)",
       }}
@@ -48,8 +59,9 @@ function SalesChart() {
           display: "flex",
           justifyContent: "space-evenly",
           alignItems: "flex-end",
-          height: "280px",
-          marginTop: "25px",
+          gap: "15px",
+          height: "300px",
+          marginTop: "30px",
         }}
       >
         {data.map((item) => (
@@ -59,11 +71,12 @@ function SalesChart() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              flex: 1,
             }}
           >
             <strong
               style={{
-                color: "#2e7d32",
+                color: "#1b5e20",
                 marginBottom: "8px",
               }}
             >
@@ -71,13 +84,15 @@ function SalesChart() {
             </strong>
 
             <div
+              title={`₹${item.value}`}
               style={{
-                width: "45px",
-                height: `${(item.value / maxValue) * 180}px`,
+                width: "55px",
+                height: `${(item.value / maxValue) * 200}px`,
                 background:
-                  "linear-gradient(to top,#1b5e20,#66bb6a)",
-                borderRadius: "8px 8px 0 0",
-                transition: ".3s",
+                  "linear-gradient(to top,#1b5e20,#4caf50,#81c784)",
+                borderRadius: "10px 10px 0 0",
+                transition: "0.3s",
+                cursor: "pointer",
               }}
             />
 
@@ -86,6 +101,7 @@ function SalesChart() {
                 marginTop: "10px",
                 fontSize: "12px",
                 fontWeight: "bold",
+                textAlign: "center",
               }}
             >
               {item.label}

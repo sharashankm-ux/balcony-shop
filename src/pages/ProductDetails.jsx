@@ -1,13 +1,27 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
+
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  where,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import { db } from "../firebase";
+
 import { ProductContext } from "../context/ProductContext";
 import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
+import { AuthContext } from "../context/AuthContext";
 
 function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const { user } = useContext(AuthContext);
   const { products } = useContext(ProductContext);
   const { addToCart } = useContext(CartContext);
   const { addToWishlist } = useContext(WishlistContext);
@@ -16,6 +30,28 @@ function ProductDetails() {
 
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState("");
+
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const q = query(
+      collection(db, "reviews"),
+      where("productId", "==", id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setReviews(list);
+    });
+
+    return () => unsubscribe();
+  }, [id]);
 
   if (!product) {
     return (
@@ -29,16 +65,44 @@ function ProductDetails() {
     );
   }
 
-  const submitReview = () => {
+  const averageRating =
+    reviews.length > 0
+      ? (
+          reviews.reduce(
+            (sum, item) => sum + Number(item.rating),
+            0
+          ) / reviews.length
+        ).toFixed(1)
+      : "0.0";
+
+  const submitReview = async () => {
     if (!review.trim()) {
       alert("Please write a review.");
       return;
     }
 
-    alert("⭐ Review Submitted Successfully!");
+    try {
+      await addDoc(collection(db, "reviews"), {
+        productId: product.id,
+        productName: product.name,
 
-    setReview("");
-    setRating(5);
+        userId: user?.uid || "",
+        userEmail: user?.email || "Guest",
+
+        rating,
+        review,
+
+        createdAt: serverTimestamp(),
+      });
+
+      alert("⭐ Review Submitted Successfully!");
+
+      setReview("");
+      setRating(5);
+    } catch (error) {
+      console.log(error);
+      alert("Failed to submit review.");
+    }
   };
 
   return (
@@ -77,7 +141,11 @@ function ProductDetails() {
             margin: "10px 0",
           }}
         >
-          ⭐⭐⭐⭐⭐
+          ⭐ {averageRating} / 5
+          <br />
+          <small>
+            ({reviews.length} Reviews)
+          </small>
         </div>
 
         <h2 style={{ color: "#2e7d32" }}>
@@ -97,8 +165,7 @@ function ProductDetails() {
           Premium quality balcony product made with durable materials.
           Perfect for home decoration and modern living.
         </p>
-
-        <div
+                <div
           style={{
             display: "flex",
             gap: "12px",
@@ -174,6 +241,39 @@ function ProductDetails() {
         >
           ⭐ Submit Review
         </button>
+
+        <hr style={{ margin: "35px 0" }} />
+
+        <h2>💬 Customer Reviews</h2>
+
+        {reviews.length === 0 ? (
+          <p>No Reviews Yet.</p>
+        ) : (
+          reviews.map((item) => (
+            <div
+              key={item.id}
+              style={{
+                background: "#f5f5f5",
+                padding: "15px",
+                borderRadius: "10px",
+                marginTop: "15px",
+              }}
+            >
+              <strong>{item.userEmail}</strong>
+
+              <p
+                style={{
+                  color: "#ff9800",
+                  margin: "5px 0",
+                }}
+              >
+                {"⭐".repeat(item.rating)}
+              </p>
+
+              <p>{item.review}</p>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -186,6 +286,7 @@ const buttonGreen = {
   padding: "12px 22px",
   borderRadius: "8px",
   cursor: "pointer",
+  fontWeight: "bold",
 };
 
 const buttonPink = {
@@ -195,6 +296,7 @@ const buttonPink = {
   padding: "12px 22px",
   borderRadius: "8px",
   cursor: "pointer",
+  fontWeight: "bold",
 };
 
 const buttonGray = {
@@ -204,6 +306,7 @@ const buttonGray = {
   padding: "12px 22px",
   borderRadius: "8px",
   cursor: "pointer",
+  fontWeight: "bold",
 };
 
 export default ProductDetails;

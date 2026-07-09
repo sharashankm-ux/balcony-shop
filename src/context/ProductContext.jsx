@@ -6,9 +6,11 @@ import {
   updateDoc,
   doc,
   onSnapshot,
+  serverTimestamp,
+  getDoc,
 } from "firebase/firestore";
 
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 
 export const ProductContext = createContext();
 
@@ -26,6 +28,9 @@ function ProductProvider({ children }) {
         }));
 
         setProducts(productList);
+      },
+      (error) => {
+        console.error(error);
       }
     );
 
@@ -33,10 +38,29 @@ function ProductProvider({ children }) {
   }, []);
 
   const addProduct = async (product) => {
-    await addDoc(collection(db, "products"), product);
-  };
+    const currentUser = auth.currentUser;
 
-  const deleteProduct = async (id) => {
+    const newProduct = {
+      ...product,
+      sellerId: currentUser?.uid || "",
+      sellerEmail: currentUser?.email || "",
+
+      stock: Number(product.stock || 100),
+      status: "Active",
+
+      views: 0,
+      sold: 0,
+
+      rating: 0,
+      totalReviews: 0,
+
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await addDoc(collection(db, "products"), newProduct);
+  };
+    const deleteProduct = async (id) => {
     await deleteDoc(doc(db, "products", id));
   };
 
@@ -47,9 +71,39 @@ function ProductProvider({ children }) {
   const updateProduct = async (updatedProduct) => {
     const { id, ...data } = updatedProduct;
 
-    await updateDoc(doc(db, "products", id), data);
+    await updateDoc(doc(db, "products", id), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
 
     setEditingProduct(null);
+  };
+
+  const reduceStock = async (items) => {
+    try {
+      for (const item of items) {
+        const productRef = doc(db, "products", item.id);
+
+        const snap = await getDoc(productRef);
+
+        if (!snap.exists()) continue;
+
+        const product = snap.data();
+
+        const currentStock = Number(product.stock || 0);
+        const qty = Number(item.quantity || 1);
+
+        const newStock = Math.max(currentStock - qty, 0);
+
+        await updateDoc(productRef, {
+          stock: newStock,
+          sold: (product.sold || 0) + qty,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -61,6 +115,7 @@ function ProductProvider({ children }) {
         editProduct,
         updateProduct,
         editingProduct,
+        reduceStock,
       }}
     >
       {children}

@@ -5,7 +5,6 @@ export const CartContext = createContext();
 function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => {
     const savedCart = localStorage.getItem("cart");
-
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
@@ -14,9 +13,23 @@ function CartProvider({ children }) {
   }, [cartItems]);
 
   const addToCart = (product) => {
-    const exist = cartItems.find((item) => item.id === product.id);
+    const exist = cartItems.find(
+      (item) => item.id === product.id
+    );
+
+    const stock = Number(product.stock || 0);
+
+    if (stock <= 0) {
+      alert("❌ Product is Out of Stock");
+      return;
+    }
 
     if (exist) {
+      if (exist.quantity >= stock) {
+        alert(`⚠ Only ${stock} item(s) available`);
+        return;
+      }
+
       setCartItems(
         cartItems.map((item) =>
           item.id === product.id
@@ -40,17 +53,23 @@ function CartProvider({ children }) {
 
   const increaseQuantity = (id) => {
     setCartItems(
-      cartItems.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              quantity: item.quantity + 1,
-            }
-          : item
-      )
+      cartItems.map((item) => {
+        if (item.id !== id) return item;
+
+        const stock = Number(item.stock || 0);
+
+        if (item.quantity >= stock) {
+          alert(`⚠ Only ${stock} item(s) available`);
+          return item;
+        }
+
+        return {
+          ...item,
+          quantity: item.quantity + 1,
+        };
+      })
     );
   };
-
   const decreaseQuantity = (id) => {
     setCartItems(
       cartItems

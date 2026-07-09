@@ -15,36 +15,66 @@ function Products() {
   const [sort, setSort] = useState("default");
   const [maxPrice, setMaxPrice] = useState(100000);
 
+  // ⭐ New Filters
+  const [stockFilter, setStockFilter] = useState("all");
+  const [ratingFilter, setRatingFilter] = useState(0);
+
   let filteredProducts = products.filter((product) => {
     const matchSearch = product.name
       .toLowerCase()
       .includes(search.toLowerCase());
 
     const matchCategory =
-      category === "All" || product.category === category;
+      category === "All" ||
+      product.category === category;
 
-    const matchPrice = product.price <= maxPrice;
+    const matchPrice =
+      Number(product.price) <= maxPrice;
 
-    return matchSearch && matchCategory && matchPrice;
+    const matchStock =
+      stockFilter === "all"
+        ? true
+        : stockFilter === "instock"
+        ? Number(product.stock) > 0
+        : Number(product.stock) <= 0;
+
+    const matchRating =
+      Number(product.rating || 0) >= ratingFilter;
+
+    return (
+      matchSearch &&
+      matchCategory &&
+      matchPrice &&
+      matchStock &&
+      matchRating
+    );
   });
 
   if (sort === "low-high") {
-    filteredProducts = [...filteredProducts].sort(
+    filteredProducts.sort(
       (a, b) => a.price - b.price
     );
   }
 
   if (sort === "high-low") {
-    filteredProducts = [...filteredProducts].sort(
+    filteredProducts.sort(
       (a, b) => b.price - a.price
     );
   }
 
-  return (
+  if (sort === "rating") {
+    filteredProducts.sort(
+      (a, b) =>
+        Number(b.rating || 0) -
+        Number(a.rating || 0)
+    );
+  }
+    return (
     <div className="products-page">
       <h1>🛍️ Our Products</h1>
 
       <div className="filters">
+
         <input
           type="text"
           placeholder="🔍 Search Product..."
@@ -72,6 +102,28 @@ function Products() {
           <option value="default">Sort By</option>
           <option value="low-high">Price : Low → High</option>
           <option value="high-low">Price : High → Low</option>
+          <option value="rating">⭐ Highest Rating</option>
+        </select>
+
+        <select
+          value={stockFilter}
+          onChange={(e) => setStockFilter(e.target.value)}
+        >
+          <option value="all">All Stock</option>
+          <option value="instock">In Stock</option>
+          <option value="outofstock">Out of Stock</option>
+        </select>
+
+        <select
+          value={ratingFilter}
+          onChange={(e) =>
+            setRatingFilter(Number(e.target.value))
+          }
+        >
+          <option value={0}>All Ratings</option>
+          <option value={4}>⭐ 4 & Above</option>
+          <option value={3}>⭐ 3 & Above</option>
+          <option value={2}>⭐ 2 & Above</option>
         </select>
 
         <div style={{ minWidth: "220px" }}>
@@ -84,13 +136,17 @@ function Products() {
             min="0"
             max="100000"
             value={maxPrice}
-            onChange={(e) => setMaxPrice(Number(e.target.value))}
+            onChange={(e) =>
+              setMaxPrice(Number(e.target.value))
+            }
             style={{ width: "100%" }}
           />
         </div>
+
       </div>
 
       <div className="products-grid">
+
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
             <ProductCard
@@ -110,6 +166,7 @@ function Products() {
             No Products Found 😔
           </h2>
         )}
+
       </div>
     </div>
   );

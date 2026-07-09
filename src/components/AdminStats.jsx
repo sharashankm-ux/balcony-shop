@@ -6,16 +6,27 @@ function AdminStats() {
   const { products } = useContext(ProductContext);
   const { orders } = useContext(OrderContext);
 
-  const totalRevenue = orders.reduce(
-    (sum, order) => sum + Number(order.total || 0),
-    0
-  );
+  // Revenue (Only Delivered Orders)
+  const totalRevenue = orders
+    .filter((order) => order.status === "Delivered")
+    .reduce(
+      (sum, order) => sum + Number(order.total || 0),
+      0
+    );
 
+  // Total Customers
   const uniqueCustomers = [
     ...new Set(
-      orders.map((order) => order.customer)
+      orders
+        .map((order) => order.customer)
+        .filter(Boolean)
     ),
   ];
+
+  // Delivered Orders
+  const deliveredOrders = orders.filter(
+    (order) => order.status === "Delivered"
+  ).length;
 
   const cards = [
     {
@@ -42,6 +53,12 @@ function AdminStats() {
       icon: "💰",
       color: "#9C27B0",
     },
+    {
+      title: "Delivered",
+      value: deliveredOrders,
+      icon: "✅",
+      color: "#009688",
+    },
   ];
 
   return (
@@ -62,6 +79,7 @@ function AdminStats() {
             padding: "25px",
             borderRadius: "12px",
             boxShadow: "0 8px 18px rgba(0,0,0,.15)",
+            transition: "0.3s",
           }}
         >
           <h2 style={{ margin: 0 }}>

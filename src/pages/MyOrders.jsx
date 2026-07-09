@@ -16,7 +16,6 @@ function MyOrders() {
         }}
       >
         <h1>📦 No Orders Yet</h1>
-
         <p>Your placed orders will appear here.</p>
       </div>
     );
@@ -42,19 +41,18 @@ function MyOrders() {
             boxShadow: "0 5px 15px rgba(0,0,0,.1)",
           }}
         >
-          <h2>{order.id}</h2>
+          <h2>Order ID : {order.orderId}</h2>
 
           <p>
-            <strong>Date:</strong> {order.date}
+            <strong>Customer :</strong> {order.customer}
           </p>
 
           <p>
-            <strong>Payment:</strong>{" "}
-            {order.customer.payment}
+            <strong>Payment :</strong> {order.payment}
           </p>
 
           <p>
-            <strong>Status:</strong>
+            <strong>Status :</strong>
 
             <span
               style={{
@@ -75,7 +73,7 @@ function MyOrders() {
             onClick={() => navigate("/tracking")}
             style={{
               background: "#1976d2",
-              color: "white",
+              color: "#fff",
               border: "none",
               padding: "10px 20px",
               borderRadius: "8px",

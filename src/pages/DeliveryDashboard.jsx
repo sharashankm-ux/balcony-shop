@@ -4,14 +4,45 @@ import { OrderContext } from "../context/OrderContext";
 function DeliveryDashboard() {
   const { orders, updateOrderStatus } = useContext(OrderContext);
 
-  if (orders.length === 0) {
+  const deliveryOrders = orders.filter(
+    (order) =>
+      order.status === "Packed" ||
+      order.status === "Shipped" ||
+      order.status === "Out For Delivery"
+  );
+
+  if (deliveryOrders.length === 0) {
     return (
-      <div style={{ padding: "40px", textAlign: "center" }}>
+      <div
+        style={{
+          padding: "40px",
+          textAlign: "center",
+        }}
+      >
         <h1>🚚 Delivery Dashboard</h1>
-        <h2>No Orders Available</h2>
+        <h2>No Assigned Orders</h2>
       </div>
     );
   }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Packed":
+        return "#7b1fa2";
+
+      case "Shipped":
+        return "#1976d2";
+
+      case "Out For Delivery":
+        return "#ff9800";
+
+      case "Delivered":
+        return "#2e7d32";
+
+      default:
+        return "#555";
+    }
+  };
 
   return (
     <div
@@ -23,7 +54,7 @@ function DeliveryDashboard() {
     >
       <h1>🚚 Delivery Dashboard</h1>
 
-      {orders.map((order) => (
+      {deliveryOrders.map((order) => (
         <div
           key={order.id}
           style={{
@@ -38,26 +69,40 @@ function DeliveryDashboard() {
           <h2>{order.orderId}</h2>
 
           <p>
-            <strong>Customer:</strong> {order.customer.name}
+            <strong>Customer:</strong>{" "}
+            {typeof order.customer === "object"
+              ? order.customer?.name
+              : order.customer}
           </p>
 
           <p>
-            <strong>Mobile:</strong> {order.customer.mobile}
+            <strong>Mobile:</strong>{" "}
+            {order.customer?.mobile || "Not Available"}
           </p>
 
           <p>
-            <strong>Address:</strong> {order.customer.address}
+            <strong>Address:</strong>{" "}
+            {order.customer?.address || "Not Available"}
           </p>
 
           <p>
-            <strong>City:</strong> {order.customer.city}
+            <strong>City:</strong>{" "}
+            {order.customer?.city || "Not Available"}
+          </p>
+
+          <p>
+            <strong>Total:</strong> ₹
+            {Number(order.total || 0).toLocaleString()}
           </p>
 
           <p>
             <strong>Status:</strong>{" "}
             <span
               style={{
-                color: "green",
+                background: getStatusColor(order.status),
+                color: "#fff",
+                padding: "6px 12px",
+                borderRadius: "20px",
                 fontWeight: "bold",
               }}
             >
@@ -73,23 +118,38 @@ function DeliveryDashboard() {
               marginTop: "20px",
             }}
           >
-            <button onClick={() => updateOrderStatus(order.id, "Packed")}>
+            <button
+              onClick={() =>
+                updateOrderStatus(order.id, "Packed")
+              }
+            >
               📦 Packed
             </button>
 
-            <button onClick={() => updateOrderStatus(order.id, "Shipped")}>
+            <button
+              onClick={() =>
+                updateOrderStatus(order.id, "Shipped")
+              }
+            >
               🚚 Shipped
             </button>
 
             <button
               onClick={() =>
-                updateOrderStatus(order.id, "Out For Delivery")
+                updateOrderStatus(
+                  order.id,
+                  "Out For Delivery"
+                )
               }
             >
               🛵 Out For Delivery
             </button>
 
-            <button onClick={() => updateOrderStatus(order.id, "Delivered")}>
+            <button
+              onClick={() =>
+                updateOrderStatus(order.id, "Delivered")
+              }
+            >
               ✅ Delivered
             </button>
           </div>

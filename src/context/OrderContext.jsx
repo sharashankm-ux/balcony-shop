@@ -9,12 +9,13 @@ import {
   orderBy,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "../firebase";
+
+import { db, auth } from "../firebase";
 
 export const OrderContext = createContext();
 
 function OrderProvider({ children }) {
-  const [orders, setOrders] =useState([]);
+  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     const q = query(
@@ -34,17 +35,45 @@ function OrderProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
+  // ==========================
+  // Place Order
+  // ==========================
   const placeOrder = async (order) => {
-    const newOrder = {
-      orderId:
-        "BS-" +
-        Date.now().toString().slice(-6),
+    const currentUser = auth.currentUser;
 
-      ...order,
+    const newOrder = {
+      orderId: "BS-" + Date.now().toString().slice(-6),
+
+      buyerId: currentUser?.uid || "",
+      buyerEmail: currentUser?.email || "",
+
+      sellerId:
+        order.items?.length > 0
+          ? order.items[0].sellerId || ""
+          : "",
+
+      sellerEmail:
+        order.items?.length > 0
+          ? order.items[0].sellerEmail || ""
+          : "",
+
+      deliveryBoyId: "",
+      deliveryBoyName: "",
+
+      customer: order.customer,
+      mobile: order.mobile,
+      address: order.address,
+      city: order.city,
+      pincode: order.pincode,
+
+      payment: order.payment,
+      paymentStatus: "Pending",
+
+      total: order.total,
+
+      items: order.items,
 
       status: "Order Placed",
-
-      paymentStatus: "Pending",
 
       trackingSteps: [
         {
@@ -70,6 +99,7 @@ function OrderProvider({ children }) {
       ],
 
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
 
     await addDoc(
@@ -77,11 +107,28 @@ function OrderProvider({ children }) {
       newOrder
     );
   };
+    // ==========================
+  // Update Order Status
+  // ==========================
+  const updateOrderStatus = async (id, status) => {
+    if (status === "Cancelled") {
+      await updateDoc(doc(db, "orders", id), {
+        status: "Cancelled",
+        paymentStatus: "Refund Pending",
 
-  const updateOrderStatus = async (
-    id,
-    status
-  ) => {
+        trackingSteps: [
+          {
+            title: "Order Cancelled",
+            completed: true,
+          },
+        ],
+
+        updatedAt: serverTimestamp(),
+      });
+
+      return;
+    }
+
     const steps = [
       "Order Placed",
       "Packed",
@@ -90,19 +137,39 @@ function OrderProvider({ children }) {
       "Delivered",
     ];
 
-    const currentIndex =
-      steps.indexOf(status);
+    const currentIndex = steps.indexOf(status);
 
-    const trackingSteps = steps.map(
-      (step, index) => ({
-        title: step,
-        completed: index <= currentIndex,
-      })
-    );
+    const trackingSteps = steps.map((step, index) => ({
+      title: step,
+      completed: index <= currentIndex,
+    }));
 
     await updateDoc(doc(db, "orders", id), {
       status,
+
+      paymentStatus:
+        status === "Delivered"
+          ? "Paid"
+          : "Pending",
+
       trackingSteps,
+
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  // ==========================
+  // Assign Delivery Boy
+  // ==========================
+  const assignDeliveryBoy = async (
+    orderId,
+    deliveryBoyId,
+    deliveryBoyName
+  ) => {
+    await updateDoc(doc(db, "orders", orderId), {
+      deliveryBoyId,
+      deliveryBoyName,
+      updatedAt: serverTimestamp(),
     });
   };
 
@@ -112,6 +179,7 @@ function OrderProvider({ children }) {
         orders,
         placeOrder,
         updateOrderStatus,
+        assignDeliveryBoy,
       }}
     >
       {children}

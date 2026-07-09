@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { ProductContext } from "../context/ProductContext";
 
 function AdminProductTable() {
@@ -7,6 +7,12 @@ function AdminProductTable() {
     deleteProduct,
     editProduct,
   } = useContext(ProductContext);
+
+  const [search, setSearch] = useState("");
+
+  const filteredProducts = products.filter((item) =>
+    item.name?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div
@@ -18,13 +24,38 @@ function AdminProductTable() {
         boxShadow: "0 5px 15px rgba(0,0,0,.1)",
       }}
     >
-      <h2>📦 Product Management</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "15px",
+          marginBottom: "20px",
+        }}
+      >
+        <h2>📦 Product Management ({products.length})</h2>
+
+        <input
+          type="text"
+          placeholder="🔍 Search Product..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            padding: "10px 15px",
+            width: "260px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            outline: "none",
+          }}
+        />
+      </div>
 
       <table
         style={{
           width: "100%",
           borderCollapse: "collapse",
-          marginTop: "20px",
+          marginTop: "10px",
         }}
       >
         <thead>
@@ -38,26 +69,27 @@ function AdminProductTable() {
             <th style={th}>Product</th>
             <th style={th}>Category</th>
             <th style={th}>Price</th>
+            <th style={th}>Status</th>
             <th style={th}>Action</th>
           </tr>
         </thead>
 
         <tbody>
-          {products.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <tr>
               <td
-                colSpan="5"
+                colSpan="6"
                 style={{
                   textAlign: "center",
-                  padding: "30px",
+                  padding: "35px",
                   color: "#777",
                 }}
               >
-                No Products Available
+                😔 No Products Found
               </td>
             </tr>
           ) : (
-            products.map((item) => (
+            filteredProducts.map((item) => (
               <tr key={item.id}>
                 <td style={td}>
                   <img
@@ -83,17 +115,26 @@ function AdminProductTable() {
                 </td>
 
                 <td style={td}>
+                  <span
+                    style={{
+                      background:
+                        item.status === "Active"
+                          ? "#4CAF50"
+                          : "#f44336",
+                      color: "#fff",
+                      padding: "5px 10px",
+                      borderRadius: "20px",
+                      fontSize: "13px",
+                    }}
+                  >
+                    {item.status || "Active"}
+                  </span>
+                </td>
+
+                <td style={td}>
                   <button
                     onClick={() => editProduct(item)}
-                    style={{
-                      background: "#1976d2",
-                      color: "#fff",
-                      border: "none",
-                      padding: "8px 14px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      marginRight: "10px",
-                    }}
+                    style={editBtn}
                   >
                     ✏ Edit
                   </button>
@@ -108,14 +149,7 @@ function AdminProductTable() {
                         deleteProduct(item.id);
                       }
                     }}
-                    style={{
-                      background: "#d32f2f",
-                      color: "#fff",
-                      border: "none",
-                      padding: "8px 14px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                    }}
+                    style={deleteBtn}
                   >
                     🗑 Delete
                   </button>
@@ -138,6 +172,25 @@ const td = {
   padding: "12px",
   borderBottom: "1px solid #ddd",
   color: "#222",
+};
+
+const editBtn = {
+  background: "#1976d2",
+  color: "#fff",
+  border: "none",
+  padding: "8px 14px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  marginRight: "10px",
+};
+
+const deleteBtn = {
+  background: "#d32f2f",
+  color: "#fff",
+  border: "none",
+  padding: "8px 14px",
+  borderRadius: "6px",
+  cursor: "pointer",
 };
 
 export default AdminProductTable;

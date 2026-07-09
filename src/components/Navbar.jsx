@@ -1,16 +1,20 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
 
 import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
+import { AuthContext } from "../context/AuthContext";
 
 import "./Navbar.css";
 
 function Navbar() {
   const { cartItems } = useContext(CartContext);
   const { wishlist } = useContext(WishlistContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [bounce, setBounce] = useState(false);
+  const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (cartItems.length === 0) return;
@@ -24,47 +28,129 @@ function Navbar() {
     return () => clearTimeout(timer);
   }, [cartItems]);
 
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
   return (
     <nav className="navbar">
-      <div className="logo">
+      {/* Logo */}
+      <NavLink to="/" className="logo">
         🌿 Balcony Shop
-      </div>
+      </NavLink>
 
-      <ul className="nav-links">
+      {/* Search */}
+      <input
+        type="text"
+        className="search-box"
+        placeholder="🔍 Search Products..."
+        autoComplete="off"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {/* Mobile Menu Button */}
+      <button
+        className="menu-btn"
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        ☰
+      </button>
+
+      {/* Navigation */}
+      <ul className={`nav-links ${menuOpen ? "active-menu" : ""}`}>
         <li>
-          <Link to="/">Home</Link>
+          <NavLink to="/" onClick={closeMenu}>
+            🏠 Home
+          </NavLink>
         </li>
 
         <li>
-          <Link to="/products">Products</Link>
+          <NavLink to="/products" onClick={closeMenu}>
+            🛍 Products
+          </NavLink>
         </li>
 
         <li>
-          <Link to="/categories">Categories</Link>
+          <NavLink to="/categories" onClick={closeMenu}>
+            📂 Categories
+          </NavLink>
         </li>
 
         <li>
-          <Link to="/wishlist">
-            ❤️ Wishlist ({wishlist.length})
-          </Link>
-        </li>
-
-        <li>
-          <Link
-            to="/cart"
-            className={`cart-link ${bounce ? "cart-bounce" : ""}`}
+          <NavLink
+            to="/wishlist"
+            className="nav-icon"
+            onClick={closeMenu}
           >
-            🛒 Cart ({cartItems.length})
-          </Link>
+            ❤️
+            {wishlist.length > 0 && (
+              <span className="badge">
+                {wishlist.length}
+              </span>
+            )}
+          </NavLink>
         </li>
 
         <li>
-          <Link to="/orders">Orders</Link>
+          <NavLink
+            to="/cart"
+            className={`cart-link nav-icon ${
+              bounce ? "cart-bounce" : ""
+            }`}
+            onClick={closeMenu}
+          >
+            🛒
+            {cartItems.length > 0 && (
+              <span className="badge">
+                {cartItems.length}
+              </span>
+            )}
+          </NavLink>
         </li>
 
         <li>
-          <Link to="/login">Login</Link>
+          <NavLink to="/orders" onClick={closeMenu}>
+            📦 Orders
+          </NavLink>
         </li>
+
+        {user ? (
+          <>
+            <li>
+              <NavLink to="/profile" onClick={closeMenu}>
+                👤 Profile
+              </NavLink>
+            </li>
+
+            <li>
+              <NavLink
+                to={`/${user.role}`}
+                onClick={closeMenu}
+              >
+                🏪 Dashboard
+              </NavLink>
+            </li>
+
+            <li>
+              <button
+                className="logout-btn"
+                onClick={() => {
+                  logout();
+                  closeMenu();
+                }}
+              >
+                🚪 Logout
+              </button>
+            </li>
+          </>
+        ) : (
+          <li>
+            <NavLink to="/login" onClick={closeMenu}>
+              🔐 Login
+            </NavLink>
+          </li>
+        )}
       </ul>
     </nav>
   );

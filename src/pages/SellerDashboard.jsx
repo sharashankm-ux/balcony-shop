@@ -1,11 +1,28 @@
-import { useContext } from "react";
+import ExportOrdersExcel from "../components/ExportOrdersExcel";
+import { useContext, useState } from "react";
+
 import { ProductContext } from "../context/ProductContext";
 import { OrderContext } from "../context/OrderContext";
+import { AuthContext } from "../context/AuthContext";
+import { CategoryContext } from "../context/CategoryContext";
 
 import AddProductForm from "../components/AddProductForm";
 import SellerProductList from "../components/SellerProductList";
 
+import DashboardCards from "../components/seller/DashboardCards";
+import SearchFilters from "../components/seller/SearchFilters";
+import TopProducts from "../components/seller/TopProducts";
+import LowStockProducts from "../components/seller/LowStockProducts";
+import SellerOrders from "../components/seller/SellerOrders";
+import OrderModal from "../components/seller/OrderModal";
+import SalesAnalytics from "../components/seller/SalesAnalytics";
+
 function SellerDashboard() {
+  const { user } = useContext(AuthContext);
+
+  const { categories } =
+    useContext(CategoryContext);
+
   const {
     products,
     addProduct,
@@ -15,11 +32,188 @@ function SellerDashboard() {
     editingProduct,
   } = useContext(ProductContext);
 
-  const { orders, updateOrderStatus } = useContext(OrderContext);
+  const {
+    orders,
+    updateOrderStatus,
+  } = useContext(OrderContext);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [categoryFilter, setCategoryFilter] =
+    useState("All");
+
+  const [statusFilter, setStatusFilter] =
+    useState("All");
+
+  const [selectedOrder, setSelectedOrder] =
+    useState(null);
+
+  const [showOrderModal, setShowOrderModal] =
+    useState(false);
+
+  // ===============================
+  // Seller Products
+  // ===============================
+
+  const sellerProducts = products
+    .filter(
+      (product) =>
+        product.sellerId === user?.uid
+    )
+    .filter((product) => {
+      const matchSearch = product.name
+        ?.toLowerCase()
+        .includes(search.toLowerCase());
+
+      const matchCategory =
+        categoryFilter === "All" ||
+        product.category === categoryFilter;
+
+      return (
+        matchSearch && matchCategory
+      );
+    });
+
+  // ===============================
+  // Seller Orders
+  // ===============================
+
+  const sellerOrders = orders
+    .filter((order) =>
+      order.items?.some(
+        (item) =>
+          item.sellerId === user?.uid
+      )
+    )
+    .filter((order) => {
+      const matchSearch =
+        order.orderId
+          ?.toLowerCase()
+          .includes(search.toLowerCase()) ||
+        order.customer
+          ?.toLowerCase()
+          .includes(search.toLowerCase());
+
+      const matchStatus =
+        statusFilter === "All" ||
+        order.status === statusFilter;
+
+      return (
+        matchSearch && matchStatus
+      );
+    });
+
+  // ===============================
+  // Dashboard Stats
+  // ===============================
+
+  const totalProducts =
+    sellerProducts.length;
+
+  const totalOrders =
+    sellerOrders.length;
+
+  const deliveredOrders =
+    sellerOrders.filter(
+      (order) =>
+        order.status === "Delivered"
+    ).length;
+
+  const totalRevenue =
+    sellerOrders
+      .filter(
+        (order) =>
+          order.status === "Delivered"
+      )
+      .reduce(
+        (sum, order) =>
+          sum +
+          Number(order.total || 0),
+        0
+      );
+
+  const totalStock =
+    sellerProducts.reduce(
+      (sum, product) =>
+        sum +
+        Number(product.stock || 0),
+      0
+    );
+
+  const averagePrice =
+    totalProducts > 0
+      ? Math.round(
+          sellerProducts.reduce(
+            (sum, product) =>
+              sum +
+              Number(product.price || 0),
+            0
+          ) / totalProducts
+        )
+      : 0;
+
+  const topProducts = [...sellerProducts]
+    .sort(
+      (a, b) =>
+        Number(b.sold || 0) -
+        Number(a.sold || 0)
+    )
+    .slice(0, 5);
+
+  const lowStockProducts =
+    sellerProducts.filter(
+      (product) =>
+        Number(product.stock || 0) <= 10
+    );
+      // ===============================
+  // UI
+  // ===============================
 
   return (
-    <div style={{ padding: "30px" }}>
-      <h1>🏪 Seller Dashboard</h1>
+    <div
+      style={{
+        padding: "30px",
+        background: "#f5f7fb",
+        minHeight: "100vh",
+      }}
+    >
+      <h1
+        style={{
+          marginBottom: "25px",
+        }}
+      >
+        🏪 Seller Dashboard
+      </h1>
+
+      <DashboardCards
+        totalProducts={totalProducts}
+        totalOrders={totalOrders}
+        totalRevenue={totalRevenue}
+        deliveredOrders={deliveredOrders}
+        totalStock={totalStock}
+        averagePrice={averagePrice}
+      />
+
+      <div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    margin: "20px 0",
+  }}
+>
+  <ExportOrdersExcel orders={sellerOrders} />
+</div>
+
+      <SearchFilters
+        search={search}
+        setSearch={setSearch}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        categories={categories}
+      />
 
       <AddProductForm
         onAddProduct={addProduct}
@@ -27,94 +221,47 @@ function SellerDashboard() {
         editingProduct={editingProduct}
       />
 
-      <hr style={{ margin: "30px 0" }} />
+      <hr
+        style={{
+          margin: "35px 0",
+        }}
+      />
 
       <SellerProductList
-        products={products}
+        products={sellerProducts}
         onDelete={deleteProduct}
         onEdit={editProduct}
       />
 
-      <hr style={{ margin: "40px 0" }} />
+      <TopProducts
+        products={topProducts}
+      />
 
-      <h2>📦 Incoming Orders</h2>
+      <LowStockProducts
+        products={lowStockProducts}
+      />
 
-      {orders.length === 0 ? (
-        <p>No Orders Yet.</p>
-      ) : (
-        orders.map((order) => (
-          <div
-            key={order.id}
-            style={{
-              background: "#fff",
-              padding: "20px",
-              marginTop: "20px",
-              borderRadius: "10px",
-              boxShadow: "0 5px 15px rgba(0,0,0,.1)",
-              color: "#222",
-            }}
-          >
-            <h3>Order ID : {order.orderId}</h3>
+      <SalesAnalytics
+        totalRevenue={totalRevenue}
+        totalOrders={totalOrders}
+        deliveredOrders={deliveredOrders}
+        totalProducts={totalProducts}
+        totalStock={totalStock}
+        averagePrice={averagePrice}
+      />
+            <SellerOrders
+        sellerOrders={sellerOrders}
+        user={user}
+        updateOrderStatus={updateOrderStatus}
+        setSelectedOrder={setSelectedOrder}
+        setShowOrderModal={setShowOrderModal}
+      />
 
-            <p>
-              <strong>Customer :</strong> {order.customer}
-            </p>
-
-            <p>
-              <strong>Total :</strong> ₹{order.total}
-            </p>
-
-            <p>
-              <strong>Status :</strong>{" "}
-              <span
-                style={{
-                  color: "green",
-                  fontWeight: "bold",
-                }}
-              >
-                {order.status}
-              </span>
-            </p>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                marginTop: "15px",
-              }}
-            >
-              <button
-                onClick={() =>
-                  updateOrderStatus(order.id, "Packed")
-                }
-                style={{
-                  background: "#2e7d32",
-                  color: "#fff",
-                  border: "none",
-                  padding: "10px 15px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                }}
-              >
-                ✅ Accept & Pack
-              </button>
-
-              <button
-                style={{
-                  background: "#d32f2f",
-                  color: "#fff",
-                  border: "none",
-                  padding: "10px 15px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                }}
-              >
-                ❌ Reject
-              </button>
-            </div>
-          </div>
-        ))
-      )}
+      <OrderModal
+        showOrderModal={showOrderModal}
+        selectedOrder={selectedOrder}
+        setShowOrderModal={setShowOrderModal}
+      />
     </div>
   );
 }
